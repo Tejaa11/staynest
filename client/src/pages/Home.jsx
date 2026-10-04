@@ -4,7 +4,7 @@ import ListingCard from '../components/ListingCard.jsx';
 import Loader from '../components/Loader.jsx';
 import { STAY_TYPES } from '../utils/format.js';
 
-const initial = { city: '', type: '', guests: '', maxPrice: '' };
+const initial = { city: '', type: '', guests: '', maxPrice: '', checkIn: '', checkOut: '' };
 
 export default function Home() {
   const [filters, setFilters] = useState(initial);
@@ -45,6 +45,21 @@ export default function Home() {
             <option value="">Any type</option>
             {STAY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
+          <input
+            type="date"
+            placeholder="Check-in"
+            aria-label="Check-in date"
+            value={filters.checkIn}
+            onChange={set('checkIn')}
+          />
+          <input
+            type="date"
+            placeholder="Check-out"
+            aria-label="Check-out date"
+            min={filters.checkIn || undefined}
+            value={filters.checkOut}
+            onChange={set('checkOut')}
+          />
           <input type="number" min="1" placeholder="Guests" value={filters.guests} onChange={set('guests')} />
           <input type="number" min="0" placeholder="Max ₹/night" value={filters.maxPrice} onChange={set('maxPrice')} />
           <button className="btn">Search</button>
