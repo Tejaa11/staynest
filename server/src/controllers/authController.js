@@ -8,6 +8,7 @@ const userResponse = (user) => ({
   email: user.email,
   role: user.role,
   avatar: user.avatar,
+  wishlist: user.wishlist || [],
   token: generateToken(user._id),
 });
 
@@ -50,4 +51,33 @@ export const login = asyncHandler(async (req, res) => {
 // GET /api/auth/me
 export const getMe = asyncHandler(async (req, res) => {
   res.json(req.user);
+});
+
+// GET /api/auth/wishlist (user only)
+export const getWishlist = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).populate({
+    path: 'wishlist',
+    match: { isActive: true },
+    populate: { path: 'host', select: 'name' },
+  });
+  res.json(user.wishlist || []);
+});
+
+// POST /api/auth/wishlist/:listingId (toggle wishlist)
+export const toggleWishlist = asyncHandler(async (req, res) => {
+  const { listingId } = req.params;
+  const user = await User.findById(req.user._id);
+  user.wishlist = user.wishlist || [];
+  const index = user.wishlist.findIndex((id) => id.toString() === listingId);
+  let wishlisted = false;
+
+  if (index > -1) {
+    user.wishlist.splice(index, 1);
+  } else {
+    user.wishlist.push(listingId);
+    wishlisted = true;
+  }
+
+  await user.save();
+  res.json({ wishlist: user.wishlist, wishlisted });
 });
