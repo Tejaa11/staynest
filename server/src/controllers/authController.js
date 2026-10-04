@@ -20,7 +20,8 @@ export const register = asyncHandler(async (req, res) => {
     throw new Error('Name, email and password are required');
   }
 
-  const exists = await User.findOne({ email });
+  const normalizedEmail = email.toLowerCase().trim();
+  const exists = await User.findOne({ email: normalizedEmail });
   if (exists) {
     res.status(409);
     throw new Error('Email already registered');
@@ -28,7 +29,7 @@ export const register = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail,
     password,
     role: role === 'host' ? 'host' : 'guest',
   });
@@ -38,7 +39,8 @@ export const register = asyncHandler(async (req, res) => {
 // POST /api/auth/login
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email }).select('+password');
+  const normalizedEmail = email ? email.toLowerCase().trim() : '';
+  const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
   if (!user || !(await user.matchPassword(password))) {
     res.status(401);
