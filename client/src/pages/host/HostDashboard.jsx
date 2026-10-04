@@ -23,17 +23,27 @@ export default function HostDashboard() {
   }, []);
 
   const setStatus = async (id, status) => {
-    await api.patch(`/bookings/${id}/status`, { status });
-    load();
+    setError('');
+    try {
+      await api.patch(`/bookings/${id}/status`, { status });
+      load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
   const remove = async (id) => {
     if (!window.confirm('Delete this listing?')) return;
-    await api.delete(`/listings/${id}`);
-    load();
+    setError('');
+    try {
+      await api.delete(`/listings/${id}`);
+      load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
-  if (error) return <p className="error">{error}</p>;
+  if (!listings && error) return <p className="error">{error}</p>;
   if (!listings) return <Loader />;
 
   // TODO: earnings summary cards (total earnings, upcoming check-ins, occupancy).
@@ -43,6 +53,8 @@ export default function HostDashboard() {
         <h1>Host Dashboard</h1>
         <Link to="/host/listings/new" className="btn">+ New listing</Link>
       </div>
+
+      {error && <p className="error" style={{ margin: '16px 0' }}>{error}</p>}
 
       <h2>Booking requests</h2>
       {bookings.length === 0 && <p className="muted">No bookings yet.</p>}
