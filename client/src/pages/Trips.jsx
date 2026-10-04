@@ -19,13 +19,21 @@ export default function Trips() {
     load();
   }, []);
 
-  // TODO: ask for confirmation before cancelling.
-  const cancel = async (id) => {
+  const [bookingToCancel, setBookingToCancel] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  const confirmCancel = async () => {
+    if (!bookingToCancel) return;
+    setCancelling(true);
+    setError('');
     try {
-      await api.patch(`/bookings/${id}/cancel`);
+      await api.patch(`/bookings/${bookingToCancel._id}/cancel`);
+      setBookingToCancel(null);
       load();
     } catch (err) {
       setError(getErrorMessage(err));
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -54,12 +62,61 @@ export default function Trips() {
               <span className={`status status-${b.status}`}>{b.status}</span>
               <strong>{formatINR(b.totalPrice)}</strong>
               {['pending', 'confirmed'].includes(b.status) && (
-                <button className="btn btn-danger" onClick={() => cancel(b._id)}>Cancel</button>
+                <button className="btn btn-danger" onClick={() => setBookingToCancel(b)}>Cancel</button>
               )}
             </div>
           </div>
         ))}
       </div>
+
+      {bookingToCancel && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}
+        >
+          <div
+            className="card confirmation-modal"
+            style={{
+              maxWidth: '480px',
+              width: '90%',
+              padding: '24px',
+              background: 'var(--surface)',
+            }}
+          >
+            <h2 style={{ marginTop: 0 }}>Cancel this reservation?</h2>
+            <p>
+              Are you sure you want to cancel your stay at{' '}
+              <strong>{bookingToCancel.listing?.title}</strong> from{' '}
+              <strong>{formatDate(bookingToCancel.checkIn)}</strong> to{' '}
+              <strong>{formatDate(bookingToCancel.checkOut)}</strong>?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button
+                className="btn btn-ghost"
+                onClick={() => setBookingToCancel(null)}
+                disabled={cancelling}
+              >
+                Keep Reservation
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={confirmCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Cancelling...' : 'Yes, Cancel Reservation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
