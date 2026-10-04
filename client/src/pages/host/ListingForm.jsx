@@ -14,7 +14,7 @@ const empty = {
   maxGuests: 2,
   bedrooms: 1,
   amenities: '',
-  imageUrl: '',
+  imageUrls: '',
 };
 
 export default function ListingForm() {
@@ -30,8 +30,8 @@ export default function ListingForm() {
       setForm({
         ...empty,
         ...data,
-        amenities: data.amenities.join(', '),
-        imageUrl: data.images[0] || '',
+        amenities: (data.amenities || []).join(', '),
+        imageUrls: (data.images || []).join(', '),
       })
     );
   }, [id, isEdit]);
@@ -42,7 +42,7 @@ export default function ListingForm() {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    const { title, description, type, city, state, address, imageUrl, amenities } = form;
+    const { title, description, type, city, state, address, imageUrls, amenities } = form;
     const payload = {
       title,
       description,
@@ -55,7 +55,10 @@ export default function ListingForm() {
       bedrooms: Number(form.bedrooms),
       amenities: amenities.split(',').map((a) => a.trim()).filter(Boolean),
     };
-    if (imageUrl) payload.images = [imageUrl];
+    const imagesList = imageUrls
+      ? imageUrls.split(/[\n,]+/).map((u) => u.trim()).filter(Boolean)
+      : [];
+    if (imagesList.length > 0) payload.images = imagesList;
     try {
       if (isEdit) await api.put(`/listings/${id}`, payload);
       else await api.post('/listings', payload);
@@ -90,7 +93,7 @@ export default function ListingForm() {
         </label>
       </div>
       <input placeholder="Amenities (comma separated: WiFi, AC, Parking)" value={form.amenities} onChange={set('amenities')} />
-      <input placeholder="Image URL (optional)" value={form.imageUrl} onChange={set('imageUrl')} />
+      <input placeholder="Image URLs (comma separated: https://..., https://...)" value={form.imageUrls} onChange={set('imageUrls')} />
       {error && <p className="error">{error}</p>}
       <button className="btn">{isEdit ? 'Save changes' : 'Publish listing'}</button>
     </form>
