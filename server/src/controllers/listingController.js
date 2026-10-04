@@ -24,14 +24,14 @@ export const getListings = asyncHandler(async (req, res) => {
 
 // GET /api/listings/mine (host)
 export const getMyListings = asyncHandler(async (req, res) => {
-  const listings = await Listing.find({ host: req.user._id }).sort({ createdAt: -1 });
+  const listings = await Listing.find({ host: req.user._id, isActive: true }).sort({ createdAt: -1 });
   res.json(listings);
 });
 
 // GET /api/listings/:id
 export const getListing = asyncHandler(async (req, res) => {
   const listing = await Listing.findById(req.params.id).populate('host', 'name avatar createdAt');
-  if (!listing) {
+  if (!listing || !listing.isActive) {
     res.status(404);
     throw new Error('Listing not found');
   }
@@ -69,8 +69,21 @@ export const updateListing = asyncHandler(async (req, res) => {
 // DELETE /api/listings/:id (owner host)
 export const deleteListing = asyncHandler(async (req, res) => {
   const listing = await findOwnedListing(req, res);
-  await listing.deleteOne();
-  // TODO: what should happen to existing bookings and reviews? See issue tracker.
+
+  const hasUpcomingConfirmed = await Booking.exists({
+    listing: listing._id,
+    status: 'confirmed',
+    checkOut: { $gte: new Date() },
+  });
+
+  if (hasUpcomingConfirmed) {
+    res.status(400);
+    throw new Error('Cannot delete a listing with upcoming confirmed bookings');
+  }
+
+  listing.isActive = false;
+  await listing.save();
+
   res.json({ message: 'Listing deleted' });
 });
 
