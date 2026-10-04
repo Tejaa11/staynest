@@ -15,6 +15,8 @@ const empty = {
   bedrooms: 1,
   amenities: '',
   imageUrl: '',
+  lat: '',
+  lng: '',
 };
 
 export default function ListingForm() {
@@ -32,6 +34,8 @@ export default function ListingForm() {
         ...data,
         amenities: data.amenities.join(', '),
         imageUrl: data.images[0] || '',
+        lat: data.location?.lat ?? '',
+        lng: data.location?.lng ?? '',
       })
     );
   }, [id, isEdit]);
@@ -42,7 +46,7 @@ export default function ListingForm() {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    const { title, description, type, city, state, address, imageUrl, amenities } = form;
+    const { title, description, type, city, state, address, imageUrl, amenities, lat, lng } = form;
     const payload = {
       title,
       description,
@@ -56,6 +60,7 @@ export default function ListingForm() {
       amenities: amenities.split(',').map((a) => a.trim()).filter(Boolean),
     };
     if (imageUrl) payload.images = [imageUrl];
+    if (lat && lng) payload.location = { lat: Number(lat), lng: Number(lng) };
     try {
       if (isEdit) await api.put(`/listings/${id}`, payload);
       else await api.post('/listings', payload);
@@ -87,6 +92,14 @@ export default function ListingForm() {
         </label>
         <label className="grow">Bedrooms
           <input type="number" min="0" value={form.bedrooms} onChange={set('bedrooms')} />
+        </label>
+      </div>
+      <div className="row">
+        <label className="grow">Latitude (optional)
+          <input type="number" step="any" placeholder="e.g. 26.9239" value={form.lat} onChange={set('lat')} />
+        </label>
+        <label className="grow">Longitude (optional)
+          <input type="number" step="any" placeholder="e.g. 75.8267" value={form.lng} onChange={set('lng')} />
         </label>
       </div>
       <input placeholder="Amenities (comma separated: WiFi, AC, Parking)" value={form.amenities} onChange={set('amenities')} />

@@ -24,6 +24,10 @@ const listingSchema = new mongoose.Schema(
     avgRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    location: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
   },
   { timestamps: true }
 );
