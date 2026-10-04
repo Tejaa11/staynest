@@ -40,7 +40,14 @@ export const getListing = asyncHandler(async (req, res) => {
 
 // POST /api/listings (host)
 export const createListing = asyncHandler(async (req, res) => {
-  const listing = await Listing.create({ ...req.body, host: req.user._id });
+  const { host, avgRating, reviewCount, isActive, ...data } = req.body;
+  const listing = await Listing.create({
+    ...data,
+    host: req.user._id,
+    avgRating: 0,
+    reviewCount: 0,
+    isActive: true,
+  });
   res.status(201).json(listing);
 });
 
