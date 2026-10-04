@@ -104,6 +104,10 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Invalid status');
   }
+  if (['cancelled', 'completed'].includes(booking.status)) {
+    res.status(400);
+    throw new Error(`Cannot update a booking that is already ${booking.status}`);
+  }
   booking.status = status;
   await booking.save();
   res.json(booking);
