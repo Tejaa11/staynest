@@ -11,27 +11,49 @@ export default function Home() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const search = (params) => {
+  const search = (currentFilters, pageNum = 1, currentSort = sort) => {
     setLoading(true);
     setError('');
-    const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== ''));
+    const clean = Object.fromEntries(Object.entries(currentFilters).filter(([, v]) => v !== ''));
     api
-      .get('/listings', { params: clean })
-      .then(({ data }) => setListings(data))
+      .get('/listings', { params: { ...clean, page: pageNum, sort: currentSort } })
+      .then(({ data }) => {
+        setListings(data.listings || []);
+        setPage(data.page || 1);
+        setTotalPages(data.totalPages || 1);
+        setTotal(data.total || 0);
+      })
       .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    search(initial);
+    search(initial, 1, 'newest');
   }, []);
 
   const set = (key) => (e) => setFilters({ ...filters, [key]: e.target.value });
 
   const submit = (e) => {
     e.preventDefault();
-    search(filters);
+    setPage(1);
+    search(filters, 1, sort);
+  };
+
+  const handleSortChange = (newSort) => {
+    setSort(newSort);
+    setPage(1);
+    search(filters, 1, newSort);
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    search(filters, newPage, sort);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -52,14 +74,54 @@ export default function Home() {
       </div>
 
       {error && <p className="error">{error}</p>}
+
+      <div className="row-between" style={{ margin: '20px 0 16px' }}>
+        <span className="muted">{total} stay{total !== 1 ? 's' : ''} available</span>
+        <div className="row">
+          <label style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+            Sort by:
+            <select value={sort} onChange={(e) => handleSortChange(e.target.value)}>
+              <option value="newest">Newest</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       {loading ? (
         <Loader />
       ) : listings.length === 0 ? (
         <p className="muted">No stays match your search.</p>
       ) : (
-        <div className="grid">
-          {listings.map((l) => <ListingCard key={l._id} listing={l} />)}
-        </div>
+        <>
+          <div className="grid">
+            {listings.map((l) => <ListingCard key={l._id} listing={l} />)}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="row" style={{ justifyContent: 'center', marginTop: '36px', gap: '12px' }}>
+              <button
+                className="btn btn-ghost"
+                disabled={page <= 1}
+                onClick={() => handlePageChange(page - 1)}
+              >
+                Previous
+              </button>
+              <span style={{ alignSelf: 'center', fontSize: '0.95rem' }}>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                className="btn btn-ghost"
+                disabled={page >= totalPages}
+                onClick={() => handlePageChange(page + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
